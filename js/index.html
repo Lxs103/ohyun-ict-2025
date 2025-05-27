@@ -15,15 +15,35 @@
     </form>
 </body>
 <script>
-    document.querySelector("#post-form").addEventListener("submit",(e)=>
-    {e.preventDefault();
-    const postText = document.querySelector("#write").value
-    if (postText !== "") {
+    const todos = [];
+
+    function init(){
+        JSON.parse(localStorage.getItem('todos')).forEach((todo)=>{
+            todos.push(todo);
+        });
+        todos.forEach(addTodo);
+    }
+    init();
+
+    function addTodo(postText){
         const post = document.createElement("li");
         post.innerText = postText;
         document.querySelector("#board").appendChild(post);
-        document.querySelector("#write").value = ""
+    }
+
+
+    document.querySelector("#post-form").addEventListener("submit",(e)=>
+    {e.preventDefault();
+    const postText = document.querySelector("#write").value
+        if (postText !== "") {
+            document.querySelector("#write").value = "";
+            todos.push(postText);
+            localStorage.setItem('todos',JSON.stringify(todos));
+            document.querySelector('#board').innerHTML = "";
+            todos.forEach(addTodo);
         }
+        console.log(todos)
     })
+
 </script>
 </html>
