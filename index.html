@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>게시판</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; }
+    table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background-color: #f2f2f2; }
+    .pagination { margin-top: 20px; }
+    .pagination button { margin: 0 2px; }
+    .form-section { margin-bottom: 30px; }
+    .form-section input, .form-section textarea { margin: 5px 0; width: 100%; }
+    .actions button { margin-right: 5px; }
+  </style>
+</head>
+<body>
+  <h1>도서 목록</h1>
+  <div class="form-section">
+    <h2>새 책 등록</h2>
+    <form id="createForm">
+      <input type="text" id="bookNumber" placeholder="책 번호" required><br>
+      <input type="text" id="bookName" placeholder="책 이름" required><br>
+      <textarea id="bookDesc" placeholder="간략한 설명" required></textarea><br>
+      <button type="submit">등록</button>
+    </form>
+  </div>
+  <table id="bookTable">
+    <thead>
+      <tr>
+        <th>번호</th>
+        <th>책 이름</th>
+        <th>설명</th>
+        <th>액션</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <div class="pagination" id="pagination"></div>
+
+  <script>
+    const API_URL = 'http://crud.tlol.me/eunsang/post';
+    let page = 1;
+    let pageSize = 10;
+    let total = 0;
+
+    function fetchBooks(pageNum = 1) {
+      fetch(`${API_URL}?page=${pageNum}&pageSize=${pageSize}`)
+        .then(res => res.json())
+        .then(data => {
+          total = data.total;
+          page = data.page;
+          pageSize = data.pageSize;
+          renderTable(data.data);
+          renderPagination();
+        });
+    }
+
+    function renderTable(books) {
+      const tbody = document.querySelector('#bookTable tbody');
+      tbody.innerHTML = '';
+      if (!books.length) {
+        tbody.innerHTML = '<tr><td colspan="4">등록된 책이 없습니다.</td></tr>';
+        return;
+      }
+      books.forEach(book => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${book.bookNumber || book.id || ''}</td>
+          <td>${book.bookName || book.title || ''}</td>
+          <td>${book.bookDesc || book.content || ''}</td>
+          <td class="actions">
+            <button onclick="editBook('${book.id}', '${book.bookNumber || book.id || ''}', '${book.bookName || book.title || ''}', '${book.bookDesc || book.content || ''}')">수정</button>
+            <button onclick="deleteBook('${book.id}')">삭제</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderPagination() {
+      const pagination = document.getElementById('pagination');
+      pagination.innerHTML = '';
+      const totalPages = Math.ceil(total / pageSize);
+      for (let i = 1; i <= totalPages; i++) {
+        const btn = document.createElement('button');
+        btn.textContent = i;
+        if (i === page) btn.disabled = true;
+        btn.onclick = () => fetchBooks(i);
+        pagination.appendChild(btn);
+      }
+    }
+
+    document.getElementById('createForm').onsubmit = async function(e) {
+      e.preventDefault();
+      const bookNumber = document.getElementById('bookNumber').value;
+      const bookName = document.getElementById('bookName').value;
+      const bookDesc = document.getElementById('bookDesc').value;
+
+      // 중복 책 이름 체크
+      const res = await fetch(`${API_URL}?page=1&pageSize=1000`);
+      const data = await res.json();
+      const exists = (data.data || []).some(book => (book.bookName || book.title) === bookName);
+      if (exists) {
+        alert('같은 이름의 책이 이미 등록되어 있습니다.');
+        return;
+      }
+
+      fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookNumber, bookName, bookDesc })
+      })
+      .then(res => res.json())
+      .then(() => {
+        this.reset();
+        fetchBooks(1);
+      });
+    };
+
+    window.editBook = function(id, bookNumber, bookName, bookDesc) {
+      const newNumber = prompt('책 번호를 수정하세요', bookNumber);
+      if (newNumber === null) return;
+      const newName = prompt('책 이름을 수정하세요', bookName);
+      if (newName === null) return;
+      const newDesc = prompt('설명을 수정하세요', bookDesc);
+      if (newDesc === null) return;
+      fetch(`${API_URL}/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookNumber: newNumber, bookName: newName, bookDesc: newDesc })
+      })
+      .then(res => res.json())
+      .then(() => fetchBooks(page));
+    };
+
+    window.deleteBook = function(id) {
+      if (!confirm('정말 삭제하시겠습니까?')) return;
+      fetch(`${API_URL}/${id}`, { method: 'DELETE' })
+        .then(res => res.json())
+        .then(() => fetchBooks(page));
+    };
+
+    fetchBooks();
+  </script>
+</body>
+</html>
