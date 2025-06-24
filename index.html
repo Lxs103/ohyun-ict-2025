@@ -220,6 +220,22 @@
         document.getElementById('bookNumber').focus();
         return;
       }
+      // 이름/번호/설명 길이 제한
+      if (bookNumber.length > 40) {
+        alert('책 번호는 40자 이내로 입력해 주세요.');
+        document.getElementById('bookNumber').focus();
+        return;
+      }
+      if (bookName.length > 40) {
+        alert('책 이름은 40자 이내로 입력해 주세요.');
+        document.getElementById('bookName').focus();
+        return;
+      }
+      if (bookDesc.length > 150) {
+        alert('설명은 150자 이내로 입력해 주세요.');
+        document.getElementById('bookDesc').focus();
+        return;
+      }
 
       // 중복 책 이름/번호 체크
       const res = await fetch(`${API_URL}?page=1&pageSize=1000`);
