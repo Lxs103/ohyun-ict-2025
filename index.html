@@ -214,6 +214,13 @@
       const bookName = document.getElementById('bookName').value;
       const bookDesc = document.getElementById('bookDesc').value;
 
+      // 번호 영어/숫자만 허용
+      if (!/^[a-zA-Z0-9]+$/.test(bookNumber)) {
+        alert('책 번호는 영어와 숫자만 입력할 수 있습니다.');
+        document.getElementById('bookNumber').focus();
+        return;
+      }
+
       // 중복 책 이름/번호 체크
       const res = await fetch(`${API_URL}?page=1&pageSize=1000`);
       const data = await res.json();
