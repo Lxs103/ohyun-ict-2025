@@ -138,6 +138,8 @@
     <form id="createForm">
       <input type="text" id="bookNumber" placeholder="책 번호" required><br>
       <input type="text" id="bookName" placeholder="책 이름" required><br>
+      <input type="text" id="bookType" placeholder="책 종류 (10자 이내)" required maxlength="10">
+      <span style="font-size:0.95em;color:#888;display:block;margin-bottom:8px;margin-top:-10px;">(예: 소설, 과학, IT 등 분야도 포함 가능)</span><br>
       <textarea id="bookDesc" placeholder="간략한 설명" required></textarea><br>
       <button type="submit">등록</button>
     </form>
@@ -147,6 +149,7 @@
       <tr>
         <th>번호</th>
         <th>책 이름</th>
+        <th>종류</th>
         <th>설명</th>
         <th>액션</th>
       </tr>
@@ -185,9 +188,10 @@
         tr.innerHTML = `
           <td>${book.bookNumber || book.id || ''}</td>
           <td>${book.bookName || book.title || ''}</td>
+          <td>${book.bookType || ''}</td>
           <td>${book.bookDesc || book.content || ''}</td>
           <td class="actions">
-            <button onclick="editBook('${book.id}', '${book.bookNumber || book.id || ''}', '${book.bookName || book.title || ''}', '${book.bookDesc || book.content || ''}')">수정</button>
+            <button onclick="editBook('${book.id}', '${book.bookNumber || book.id || ''}', '${book.bookName || book.title || ''}', '${book.bookType || ''}', '${book.bookDesc || book.content || ''}')">수정</button>
             <button onclick="deleteBook('${book.id}')">삭제</button>
           </td>
         `;
@@ -212,6 +216,7 @@
       e.preventDefault();
       const bookNumber = document.getElementById('bookNumber').value;
       const bookName = document.getElementById('bookName').value;
+      const bookType = document.getElementById('bookType').value;
       const bookDesc = document.getElementById('bookDesc').value;
 
       // 번호 영어/숫자만 허용
@@ -220,7 +225,7 @@
         document.getElementById('bookNumber').focus();
         return;
       }
-      // 이름/번호/설명 길이 제한
+      // 이름/번호/종류/설명 길이 제한
       if (bookNumber.length > 40) {
         alert('책 번호는 40자 이내로 입력해 주세요.');
         document.getElementById('bookNumber').focus();
@@ -229,6 +234,11 @@
       if (bookName.length > 40) {
         alert('책 이름은 40자 이내로 입력해 주세요.');
         document.getElementById('bookName').focus();
+        return;
+      }
+      if (bookType.length > 10) {
+        alert('책 종류는 10자 이내로 입력해 주세요.');
+        document.getElementById('bookType').focus();
         return;
       }
       if (bookDesc.length > 150) {
@@ -254,7 +264,7 @@
       fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bookNumber, bookName, bookDesc })
+        body: JSON.stringify({ bookNumber, bookName, bookType, bookDesc })
       })
       .then(res => res.json())
       .then(() => {
@@ -263,17 +273,27 @@
       });
     };
 
-    window.editBook = function(id, bookNumber, bookName, bookDesc) {
+    window.editBook = function(id, bookNumber, bookName, bookType, bookDesc) {
       const newNumber = prompt('책 번호를 수정하세요', bookNumber);
       if (newNumber === null) return;
       const newName = prompt('책 이름을 수정하세요', bookName);
       if (newName === null) return;
+      const newType = prompt('책 종류를 수정하세요', bookType);
+      if (newType === null) return;
+      if (newType.length > 10) {
+        alert('책 종류는 10자 이내로 입력해 주세요.');
+        return;
+      }
       const newDesc = prompt('설명을 수정하세요', bookDesc);
       if (newDesc === null) return;
+      if (newDesc.length > 150) {
+        alert('설명은 150자 이내로 입력해 주세요.');
+        return;
+      }
       fetch(`${API_URL}/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bookNumber: newNumber, bookName: newName, bookDesc: newDesc })
+        body: JSON.stringify({ bookNumber: newNumber, bookName: newName, bookType: newType, bookDesc: newDesc })
       })
       .then(res => res.json())
       .then(() => fetchBooks(page));
